@@ -584,6 +584,32 @@ Namespace BlackCoffee
         End Function
 #End Region
 
+#Region "GetServerDatetime"
+        ''' <summary>
+        ''' Get server date and time
+        ''' </summary>
+        Public Function GetServerDate() As Object
+            Dim connection As SqlConnection = Nothing
+            Dim command As SqlCommand = Nothing
+            Dim res As Object = Nothing
+
+            Try
+                connection = New SqlConnection(ConnectionString)
+                command = New SqlCommand("SELECT GETDATE()", connection)
+                command.CommandType = CommandType.Text
+                connection.Open()
+                res = command.ExecuteScalar()
+            Catch ex As Exception
+                Throw New SqlDbException(ex.Message, ex.InnerException)
+            Finally
+                If Not (connection Is Nothing) AndAlso (connection.State = ConnectionState.Open) Then connection.Close()
+                If Not (command Is Nothing) Then command.Dispose()
+            End Try
+
+            Return res
+        End Function
+#End Region
+
     End Class
 
 End Namespace
