@@ -11,7 +11,7 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyTitle("Black Coffee Library")> 
 <Assembly: AssemblyDescription("Black Coffee Library")> 
 <Assembly: AssemblyCompany("")> 
-<Assembly: AssemblyProduct("Black Coffee Library")> 
+<Assembly: AssemblyProduct("")> 
 <Assembly: AssemblyCopyright("Copyright © 2021")> 
 <Assembly: AssemblyTrademark("")> 
 
@@ -31,5 +31,5 @@ Imports System.Runtime.InteropServices
 ' by using the '*' as shown below:
 ' <Assembly: AssemblyVersion("1.0.*")> 
 
-<Assembly: AssemblyVersion("1.0.0.4")> 
-<Assembly: AssemblyFileVersion("1.0.0.4")> 
+<Assembly: AssemblyVersion("1.0.0.5")> 
+<Assembly: AssemblyFileVersion("1.0.0.5")> 
