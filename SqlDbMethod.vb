@@ -262,6 +262,7 @@ Namespace BlackCoffee
             End Try
             Return CType(res, IDataReader)
         End Function
+
 #End Region
 
 #Region "FillDataset"
@@ -296,29 +297,7 @@ Namespace BlackCoffee
 #End Region
 
 #Region "FillDataTable"
-        Public Function FillDataTableSp(ByVal spname As String, Optional ByVal parameters() As SqlParameter = Nothing) As DataTable
-            Dim connection As SqlConnection = Nothing
-            Dim command As SqlCommand = Nothing
-            Dim sqlda As SqlDataAdapter = Nothing
-            Dim res As New DataTable
-            Try
-                connection = New SqlConnection(ConnectionString)
-                command = New SqlCommand(spname, connection)
-                command.CommandType = CommandType.StoredProcedure
-                AssignParameters(command, parameters)
-                sqlda = New SqlDataAdapter(command)
-                sqlda.Fill(res)
-            Catch ex As Exception
-                Throw New SqlDbException(ex.Message, ex.InnerException)
-            Finally
-                If Not (connection Is Nothing) Then connection.Dispose()
-                If Not (command Is Nothing) Then command.Dispose()
-                If Not (sqlda Is Nothing) Then sqlda.Dispose()
-            End Try
-            Return res
-        End Function
-
-        Public Function FillDataTableText(ByVal cmd As String, Optional ByVal parameters() As SqlParameter = Nothing) As DataTable
+        Public Function FillDataTable(ByVal cmd As String, ByVal cmdType As CommandType, Optional ByVal parameters() As SqlParameter = Nothing) As DataTable
             Dim connection As SqlConnection = Nothing
             Dim command As SqlCommand = Nothing
             Dim sqlda As SqlDataAdapter = Nothing
@@ -326,7 +305,7 @@ Namespace BlackCoffee
             Try
                 connection = New SqlConnection(ConnectionString)
                 command = New SqlCommand(cmd, connection)
-                command.CommandType = CommandType.Text
+                command.CommandType = cmdType
                 AssignParameters(command, parameters)
                 sqlda = New SqlDataAdapter(command)
                 sqlda.Fill(res)
@@ -419,66 +398,37 @@ Namespace BlackCoffee
 
 #Region "FillComboBox"
         ''' <summary>
-        ''' Fills ComboBox control with initial value or caption using sql command text.
+        ''' Fill ComboBox with inital or default value.
         ''' </summary>
-        ''' <param name="query">SQL command text.</param>
+        ''' <param name="query">SQL command text or stored procedure name.</param>
+        ''' <param name="cmdType">A value indicating how the System.Data.SqlClient.SqlCommand property is to be interpreted.</param>
         ''' <param name="valueMember">Value member of ComboBox.</param>
         ''' <param name="displayMember">Display member of ComboBox.</param>
         ''' <param name="cmb">ComboBox control.</param>
-        ''' <param name="caption">Caption to be place to distinguish unselected ComboBox.</param>
-        ''' <param name="params">Parameters and/or filters.</param>
+        ''' <param name="caption">Inital value of ComboBox to distinguish unselected ComboBox.</param>
+        ''' <param name="params">The parameter values of command text or stored procedure.</param>
         ''' <remarks></remarks>
-        Public Sub FillCmbWithCaptionText(ByVal query As String, ByVal valueMember As String, ByVal displayMember As String, ByVal cmb As ComboBox, ByVal caption As String, Optional params() As SqlParameter = Nothing)
+        Public Sub FillCmbWithCaption(ByVal query As String, ByVal cmdType As CommandType, ByVal valueMember As String, ByVal displayMember As String, ByVal cmb As ComboBox, ByVal caption As String, Optional params() As SqlParameter = Nothing)
             Dim table As DataTable
             Dim row As DataRow
+            Dim view As DataView
 
             Try
                 table = New DataTable
-                table = FillDataTableText(query, params)
+                table = FillDataTable(query, cmdType, params)
+
+                view = New DataView(table)
+                Dim distinctTable As DataTable = view.ToTable(True, valueMember, displayMember)
 
                 If table.Rows.Count > 0 Then
-                    row = table.NewRow()
-
-                    row.ItemArray = New Object() {0, caption}
-                    table.Rows.InsertAt(row, 0)
-
-                    cmb.ValueMember = valueMember
-                    cmb.DisplayMember = displayMember
-                    cmb.DataSource = table
-                End If
-            Catch ex As Exception
-                Throw New SqlDbException(ex.Message, ex.InnerException)
-            End Try
-        End Sub
-
-        ''' <summary>
-        ''' Fills ComboBox control with initial value or caption using sql stored procedures.
-        ''' </summary>
-        ''' <param name="spName">Name of stored procedure.</param>
-        ''' <param name="valueMember">Value member of ComboBox.</param>
-        ''' <param name="displayMember">Display member of ComboBox.</param>
-        ''' <param name="cmb">ComboBox control.</param>
-        ''' <param name="caption">Caption to be place to distinguish unselected ComboBox.</param>
-        ''' <param name="params">Parameters and/or filters.</param>
-        ''' <remarks></remarks>
-        Public Sub FillCmbWithCaptionSp(ByVal spName As String, ByVal valueMember As String, ByVal displayMember As String, ByVal cmb As ComboBox, ByVal caption As String, Optional params() As SqlParameter = Nothing)
-            Dim table As DataTable
-            Dim row As DataRow
-
-            Try
-                table = New DataTable
-                table = FillDataTableSp(spName, params)
-
-                If table.Rows.Count > 0 Then
-                    row = table.NewRow()
-
+                    row = distinctTable.NewRow
                     row.ItemArray = New Object() {0, caption}
 
-                    table.Rows.InsertAt(row, 0)
+                    distinctTable.Rows.InsertAt(row, 0)
 
                     cmb.ValueMember = valueMember
                     cmb.DisplayMember = displayMember
-                    cmb.DataSource = table
+                    cmb.DataSource = distinctTable
                 End If
             Catch ex As Exception
                 Throw New SqlDbException(ex.Message, ex.InnerException)
@@ -486,46 +436,21 @@ Namespace BlackCoffee
         End Sub
 
         ''' <summary>
-        ''' Fills ComboBox control using sql command text.
+        ''' Fill ComboBox
         ''' </summary>
-        ''' <param name="query">SQL command text.</param>
+        ''' <param name="query">SQL command text or stored procedure name.</param>
+        ''' <param name="cmdType">A value indicating how the System.Data.SqlClient.SqlCommand property is to be interpreted.</param>
         ''' <param name="valueMember">Value member of ComboBox.</param>
         ''' <param name="displayMember">Display member of ComboBox.</param>
         ''' <param name="cmb">ComboBox control.</param>
-        ''' <param name="params">Parameters and/or filters.</param>
+        ''' <param name="params">The parameter values of command text or stored procedure.</param>
         ''' <remarks></remarks>
-        Public Sub FillCmbText(ByVal query As String, ByVal valueMember As String, ByVal displayMember As String, ByVal cmb As ComboBox, Optional params() As SqlParameter = Nothing)
+        Public Sub FillCmb(ByVal query As String, ByVal cmdType As CommandType, ByVal valueMember As String, ByVal displayMember As String, ByVal cmb As ComboBox, Optional params() As SqlParameter = Nothing)
             Dim table As DataTable
 
             Try
                 table = New DataTable
-                table = FillDataTableText(query, params)
-
-                If table.Rows.Count > 0 Then
-                    cmb.ValueMember = valueMember
-                    cmb.DisplayMember = displayMember
-                    cmb.DataSource = table
-                End If
-            Catch ex As Exception
-                Throw New SqlDbException(ex.Message, ex.InnerException)
-            End Try
-        End Sub
-
-        ''' <summary>
-        ''' Fills ComboBox control using sql stored procedures.
-        ''' </summary>
-        ''' <param name="spName">Name of stored procedure.</param>
-        ''' <param name="valueMember">Value member of ComboBox.</param>
-        ''' <param name="displayMember">Display member of ComboBox.</param>
-        ''' <param name="cmb">ComboBox control.</param>
-        ''' <param name="params">Parameters and/or filters.</param>
-        ''' <remarks></remarks>
-        Public Sub FillCmbSp(ByVal spName As String, ByVal valueMember As String, ByVal displayMember As String, ByVal cmb As ComboBox, Optional params() As SqlParameter = Nothing)
-            Dim table As DataTable
-
-            Try
-                table = New DataTable
-                table = FillDataTableSp(spName, params)
+                table = FillDataTable(query, cmdType, params)
 
                 If table.Rows.Count > 0 Then
                     cmb.ValueMember = valueMember
@@ -540,12 +465,11 @@ Namespace BlackCoffee
 
 #Region "ExecuteFunction"
         ''' <summary>
-        ''' Executes user-defined functions.
+        ''' Executes user-defined function with returning value.
         ''' </summary>
-        ''' <typeparam name="Type">Defines types then converts to sql data type.</typeparam>
+        ''' <typeparam name="Type">Define type then converts to SQL data type.</typeparam>
         ''' <param name="udfName">Name of user-defined function.</param>
-        ''' <param name="parameters">Parameters and/or filters.</param>
-        ''' <returns></returns>
+        ''' <param name="parameters">The parameter values of user-defined function.</param>
         ''' <remarks></remarks>
         Public Function ExecuteFunction(Of Type)(ByVal udfName As String, ParamArray parameters As SqlParameter()) As Type
             Using connection As SqlConnection = New SqlConnection(ConnectionString)
@@ -566,16 +490,17 @@ Namespace BlackCoffee
         End Function
 
         ''' <summary>
-        ''' Defines types then converts to sql data type.
+        ''' Define type then converts to SQL data type.
         ''' </summary>
         ''' <typeparam name="Type"></typeparam>
-        ''' <returns></returns>
         ''' <remarks></remarks>
         Public Function TypeToSqlDbType(Of Type)() As SqlDbType
             If GetType(Type) = GetType(Boolean) Then
                 Return SqlDbType.Bit
             ElseIf GetType(Type) = GetType(Integer) Then
                 Return SqlDbType.Int
+            ElseIf GetType(Type) = GetType(String) Then
+                Return SqlDbType.NVarChar
             ElseIf GetType(Type) = GetType(Double) Then
                 Return SqlDbType.Float
             Else
