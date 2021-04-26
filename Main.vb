@@ -134,21 +134,28 @@ showIt:     Return fileLength & suffix
         ''' <summary>
         ''' Allows single instance only of a child form.
         ''' </summary>
-        ''' <param name="frmParent">Parent form which is a Mdi container.</param>
-        ''' <param name="frmChild">Child form to be called.</param>
-        ''' <remarks></remarks>
-        Public Sub FormLoader(ByVal frmParent As Form, ByVal frmChild As Form)
+        ''' <param name="frmParent">Parent form. Set IsMdiContainer to True.</param>
+        ''' <param name="frmChild">Child form to be call.</param>
+        ''' <remarks>If IsFill is set to True, change the child form's FormBorderStyle to None.</remarks>
+        Public Sub FormLoader(ByVal frmParent As Form, ByVal frmChild As Form, Optional ByVal isFill As Boolean = False)
             Try
                 For Each mdiChild As Form In frmParent.MdiChildren
                     If mdiChild.Name = frmChild.Name Then
                         mdiChild.Activate()
+                        mdiChild.KeyPreview = True
                         Exit Sub
                     End If
                 Next
 
                 frmChild.MdiParent = frmParent
                 frmChild.Show()
-                frmChild.StartPosition = FormStartPosition.CenterScreen
+
+                If isFill = True Then
+                    frmChild.FormBorderStyle = FormBorderStyle.None
+                    frmChild.Dock = DockStyle.Fill
+                End If
+
+                frmChild.StartPosition = FormStartPosition.CenterParent
             Catch ex As Exception
                 MessageBox.Show(ex.Message, Me.SetExcpTitle(ex), MessageBoxButtons.OK, MessageBoxIcon.Error)
             End Try
@@ -185,12 +192,15 @@ showIt:     Return fileLength & suffix
             Try
                 For Each ctrl As Control In form.Controls
                     FormReset(ctrl)
+
                     If TypeOf ctrl Is TextBox Then
                         CType(ctrl, TextBox).Text = String.Empty
                     End If
+
                     If TypeOf ctrl Is ComboBox Then
                         CType(ctrl, ComboBox).SelectedValue = 0
                     End If
+
                     If TypeOf ctrl Is DateTimePicker Then
                         CType(ctrl, DateTimePicker).Value = Date.Now
                     End If
@@ -237,12 +247,15 @@ showIt:     Return fileLength & suffix
             Try
                 For Each ctrl As Control In form.Controls
                     ClearForm(ctrl)
+
                     If TypeOf ctrl Is TextBox Then
                         CType(ctrl, TextBox).Text = String.Empty
                     End If
+
                     If TypeOf ctrl Is ComboBox Then
                         CType(ctrl, ComboBox).SelectedValue = 0
                     End If
+
                     If TypeOf ctrl Is DateTimePicker Then
                         CType(ctrl, DateTimePicker).Value = Date.Now
                     End If
